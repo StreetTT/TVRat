@@ -6,8 +6,11 @@ f = open("Shows.txt", "r")
 tvSHows = f.read()
 f.close()
 tvSHows = tvSHows.split("\n")
-notionT = getenv("notionTokeTest")
-dbID = getenv("databaseID")
+notionT = getenv("notionToken")
+dbID = getenv("databaseURL")
+dbID = dbID.replace("https://www.notion.so/","")
+if len(dbID) > 32:
+    dbID = dbID[:32]
 newPageURL = "https://api.notion.com/v1/pages"
 queryURL = f"https://api.notion.com/v1/databases/{dbID}/query"
 for show in tvSHows:
