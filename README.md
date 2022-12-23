@@ -26,7 +26,7 @@ This program allows you to manage a list of TV shows and their episodes in Notio
   	
 	1. Clone the repository or download the program as a zip file. 
   	
-	2. In the root directory of the program,  create a file called `Shows.txt` containing the names of the TV shows you want to manage, each on a new line.
+	2. In the root directory of the program,  edit `Shows.txt` to contain the names of the TV shows you want to manage, each on a new line.
   	
 	3. In the root directory of the program, create a file called `.env` and add the following environment variables: 
   	
