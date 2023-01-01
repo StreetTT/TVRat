@@ -1,45 +1,36 @@
 import requests, json
+from dotenv import load_dotenv as loadenv
 from os import getenv
+
+
+def SendRequest(url,method,headers={},json={}):
+    res = requests.request(method=method, url=url, json=json, headers=headers)
+    if res.status_code != 200:
+        print(f"{res.status_code} | {method} | {res.url}\n{res.text}\n")
+        return
+    print(f"{res.status_code} | {method} | {res.url}\n")
+    return res.text
 
 tvSHows = []
 f = open("Shows.txt", "r")
 tvSHows = f.read()
 f.close()
 tvSHows = tvSHows.split("\n")
+loadenv()
 notionT = getenv("notionToken")
 dbID = getenv("databaseURL")
 dbID = dbID.replace("https://www.notion.so/","")
 if len(dbID) > 32:
     dbID = dbID[:32]
-newPageURL = "https://api.notion.com/v1/pages"
-queryURL = f"https://api.notion.com/v1/databases/{dbID}/query"
+PageURL = "https://api.notion.com/v1/pages"
+queryURL = ("https://api.notion.com/v1/databases/","/query")
+searchURL = "https://api.tvmaze.com/singlesearch/shows?q="
+episodesURL = ("https://api.tvmaze.com/shows/","/episodes")
+showURL = "https://api.tvmaze.com/shows/"
 for show in tvSHows:
-    #Retrive the show Data
-    searchURL = f"https://api.tvmaze.com/singlesearch/shows?q={show}"
-    method = "GET"
-    res = requests.request(method, url=searchURL)
-    if res.status_code == 200:
-        print(f"{res.status_code} | {method} | {res.url}\n")
-    else:
-        print(f"{res.status_code} | {method} | {res.url}\n{res.text}\n")
-        quit()
-    showID = (json.loads(res.text))["id"]
-    episodesURL = f"https://api.tvmaze.com/shows/{showID}/episodes"
-    showURL = f"https://api.tvmaze.com/shows/{showID}"
-    res = requests.request(method, url=episodesURL)
-    if res.status_code == 200:
-        print(f"{res.status_code} | {method} | {res.url}\n")
-    else:
-        print(f"{res.status_code} | {method} | {res.url}\n{res.text}\n")
-        quit()
-    episodesData = (json.loads(res.text))
-    res = requests.request(method, url=showURL)
-    if res.status_code == 200:
-        print(f"{res.status_code} | {method} | {res.url}\n")
-    else:
-        print(f"{res.status_code} | {method} | {res.url}\n{res.text}\n")
-        quit()
-    showName = (json.loads(res.text))["name"]
+    showID = SendRequest(url=searchURL+show,method="GET")["id"]
+    episodesData = SendRequest(url=episodesURL[0]+showID+episodesURL[1],method="GET")
+    showName = SendRequest(url=showURL+showID,method="GET")["name"]
     headers = {
         "Authorization": f"Bearer {notionT}",
         "Notion-Version": "2022-06-28",
@@ -64,16 +55,7 @@ for show in tvSHows:
             "direction": "descending"
         }]
     }
-    res = requests.request(method=method,
-                           url=queryURL,
-                           json=query,
-                           headers=headers)
-    if res.status_code == 200:
-        print(f"{res.status_code} | {method} | {res.url}\n")
-    else:
-        print(f"{res.status_code} | {method} | {res.url}\n{res.text}\n")
-        quit()
-    topEpisodeInDatabase = (json.loads(res.text))["results"]
+    topEpisodeInDatabase = SendRequest(url=queryURL[0]+dbID+queryURL[1],method="POST", json=query, headers=headers)["results"]
     if len(topEpisodeInDatabase
            ) == 0:  ## Check what is returned if it doesnt exist
         topEpisodeInDatabase = {
@@ -142,23 +124,13 @@ for show in tvSHows:
              episode["properties"]["Episode"]["number"])) or (
                  topEpisodeInDatabase["properties"]["Season"]["number"] <
                  episode["properties"]["Season"]["number"]):
-            method = "POST"
-            res = requests.request(method=method,
-                                   url=newPageURL,
+            res = SendRequest(method="POST",
+                                   url=PageURL,
                                    json=episode,
                                    headers=headers)
-            if res.status_code == 200:
-                print(
-                    f"{res.status_code} | {method} | {showName} S{str(episode['properties']['Season']['number'])} E{str(episode['properties']['Episode']['number'])}\n"
-                )
-            else:
-                print(
-                    f"{res.status_code} | {method} | {res.url}\n{res.text}\n")
-                quit()
-
+            print(f"{showName} S{str(episode['properties']['Season']['number'])} E{str(episode['properties']['Episode']['number'])}\n")
         else:
             # Find and Update the page
-            method = "POST"
             query = {
                 "page_size":
                 1,
@@ -189,29 +161,13 @@ for show in tvSHows:
                     "direction": "descending"
                 }]
             }
-            res = requests.request(method=method,
-                                   url=queryURL,
+            EpisodePageID = SendRequest(method="POST",
+                                   url=queryURL[0]+dbID+queryURL[1],
                                    json=query,
-                                   headers=headers)
-            if res.status_code == 200:
-                print(f"{res.status_code} | {method} | {res.url}\n")
-            else:
-                print(
-                    f"{res.status_code} | {method} | {res.url}\n{res.text}\n")
-                quit()
-            EpisodePageID = (json.loads(res.text))["results"][0]["id"]
+                                   headers=headers)["results"][0]["id"]
             # Update Page
-            method = "PATCH"
-            updateURL = f"https://api.notion.com/v1/pages/{EpisodePageID}"
-            res = requests.request(method=method,
-                                   url=updateURL,
+            res = SendRequest(method="PATCH",
+                                   url=PageURL+EpisodePageID,
                                    json=episode,
                                    headers=headers)
-            if res.status_code == 200:
-                print(
-                    f"{res.status_code} | {method} | {showName} S{str(episode['properties']['Season']['number'])} E{str(episode['properties']['Episode']['number'])}\n"
-                )
-            else:
-                print(
-                    f"{res.status_code} | {method} | {res.url}\n{res.text}\n")
-                quit()
+            print(f"{showName} S{str(episode['properties']['Season']['number'])} E{str(episode['properties']['Episode']['number'])}\n"
