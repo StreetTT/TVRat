@@ -172,4 +172,4 @@ for show in tvSHows:
                                 +EpisodePageID,
                                    json=episode,
                                    headers=headers)
-            print(f"{showName} S{str(episode['properties']['Season']['number'])} E{str(episode['properties']['Episode']['number'])}\n"
+            print(f"{showName} S{str(episode['properties']['Season']['number'])} E{str(episode['properties']['Episode']['number'])}\n")
