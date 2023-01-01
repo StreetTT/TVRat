@@ -112,13 +112,6 @@ for show in tvSHows:
                 'Runtime': {
                     'number': episode["runtime"]
                 },
-                'Type': {
-                    'select': {
-                        'id': '8aea8181-07b7-4c7d-8dc6-3e441eb917a7',
-                        'name': 'TV',
-                        'color': 'green'
-                    }
-                },
                 'TV Show': {
                     'rich_text': [{
                         'text': {
