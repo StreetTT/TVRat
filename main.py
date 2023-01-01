@@ -9,7 +9,7 @@ def SendRequest(url,method,headers={},json={}):
         print(f"{res.status_code} | {method} | {res.url}\n{res.text}\n")
         return
     print(f"{res.status_code} | {method} | {res.url}\n")
-    return res.text
+    return json.loads(res.text)
 
 tvSHows = []
 f = open("Shows.txt", "r")
@@ -22,7 +22,7 @@ dbID = getenv("databaseURL")
 dbID = dbID.replace("https://www.notion.so/","")
 if len(dbID) > 32:
     dbID = dbID[:32]
-PageURL = "https://api.notion.com/v1/pages"
+pageURL = "https://api.notion.com/v1/pages"
 queryURL = ("https://api.notion.com/v1/databases/","/query")
 searchURL = "https://api.tvmaze.com/singlesearch/shows?q="
 episodesURL = ("https://api.tvmaze.com/shows/","/episodes")
@@ -125,7 +125,8 @@ for show in tvSHows:
                  topEpisodeInDatabase["properties"]["Season"]["number"] <
                  episode["properties"]["Season"]["number"]):
             res = SendRequest(method="POST",
-                                   url=PageURL,
+                                   url=pageURL
+                                ,
                                    json=episode,
                                    headers=headers)
             print(f"{showName} S{str(episode['properties']['Season']['number'])} E{str(episode['properties']['Episode']['number'])}\n")
@@ -167,7 +168,8 @@ for show in tvSHows:
                                    headers=headers)["results"][0]["id"]
             # Update Page
             res = SendRequest(method="PATCH",
-                                   url=PageURL+EpisodePageID,
+                                   url=pageURL
+                                +EpisodePageID,
                                    json=episode,
                                    headers=headers)
             print(f"{showName} S{str(episode['properties']['Season']['number'])} E{str(episode['properties']['Episode']['number'])}\n"
